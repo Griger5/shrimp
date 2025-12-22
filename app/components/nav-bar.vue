@@ -1,12 +1,12 @@
 <template>
 	<nav class="container">
 		<ul>
-			<li><strong>shrimp</strong></li>
-			<li><a href="#">About</a></li>
+			<li><strong><NuxtLink to="/">shrimp</NuxtLink></strong></li>
+			<li><NuxtLink to="/about">About</NuxtLink></li>
 		</ul>
 		<ul>
-			<li><a href="#">New Image</a></li>
-			<li><a href="#">Your account</a></li>
+			<li><NuxtLink to="/image-editor">New Image</NuxtLink></li>
+			<li><NuxtLink to="/account">Your account</NuxtLink></li>
 		</ul>
 	</nav>
 </template>
