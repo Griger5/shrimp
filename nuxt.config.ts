@@ -1,6 +1,6 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
-	modules: ["@nuxt/eslint"],
+	modules: ["@nuxt/eslint", "nuxt-auth-utils"],
 	devtools: { enabled: true },
 	css: ["@picocss/pico"],
 	compatibilityDate: "2025-07-15",
