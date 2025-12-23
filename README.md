@@ -1,1 +1,1 @@
-# **shrimp** - Simple, Humble and Rapid Image Manipulation Program
+# **shrimp** - Simple, Honest and Rapid Image Manipulation Program
