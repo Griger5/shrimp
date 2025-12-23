@@ -1,5 +1,12 @@
-version: "3.8"
 services:
+  web:
+    container_name: nuxt
+    build: .
+    environment:
+      NUXT_SESSION_PASSWORD: ${NUXT_SESSION_PASSWORD}
+    ports:
+      - "3000:3000"
+
   db:
     container_name: postgres
     image: postgres

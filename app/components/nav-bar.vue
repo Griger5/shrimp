@@ -1,6 +1,5 @@
-<script lang="ts" setup>
+<script setup lang="ts">
 const { loggedIn } = useUserSession();
-console.log(loggedIn);
 </script>
 
 <template>
