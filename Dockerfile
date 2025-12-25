@@ -13,12 +13,22 @@ COPY . ./
 
 RUN npm run build
 
+RUN npx drizzle-kit generate
+
 FROM node:${NODE_VERSION}-slim
 
 WORKDIR /app
 
+RUN apt-get update && apt-get install -y postgresql-client
+
+COPY --from=build /app/node_modules ./node_modules
+COPY --from=build /app/drizzle.config.ts ./
+COPY --from=build /app/drizzle ./drizzle
 COPY --from=build /app/.output ./
 
 EXPOSE 3000
 
-CMD ["node","/app/server/index.mjs"]
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+ENTRYPOINT ["/entrypoint.sh"]
