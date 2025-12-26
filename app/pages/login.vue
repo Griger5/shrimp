@@ -1,5 +1,9 @@
 <script setup lang="ts">
-const { loggedIn, user, fetch: refreshSession } = useUserSession();
+definePageMeta({
+	middleware: ["logged-in"],
+});
+
+const { fetch: refreshSession } = useUserSession();
 const credentials = reactive({
 	email: "",
 	password: "",

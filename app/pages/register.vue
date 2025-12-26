@@ -1,4 +1,8 @@
 <script setup lang="ts">
+definePageMeta({
+	middleware: ["logged-in"],
+});
+
 const { fetch: refreshSession } = useUserSession();
 
 const credentials = reactive({
