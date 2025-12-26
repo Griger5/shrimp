@@ -13,12 +13,12 @@ const bodySchema = z.object({
 });
 
 export default defineEventHandler(async (event) => {
-	const { username, email, password } = await readValidatedBody(event, bodySchema.parse).catch( (error) => {
-        throw createError({
-            statusCode: 400,
-            statusMessage: "Ill-formed data. Password should be at least 8 characters.",
-        });
-    });
+	const { username, email, password } = await readValidatedBody(event, bodySchema.parse).catch((error) => {
+		throw createError({
+			statusCode: 400,
+			statusMessage: "Ill-formed data. Password should be at least 8 characters.",
+		});
+	});
 
 	const existingUser = await db.select().from(usersTable).where(eq(usersTable.email, email)).limit(1);
 

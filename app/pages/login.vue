@@ -5,22 +5,29 @@ const credentials = reactive({
 	password: "",
 });
 async function login() {
-	try {
-		await $fetch("/api/login", {
-			method: "POST",
-			body: credentials,
-		});
+	const { data, error } = await useFetch("/api/login", {
+		method: "POST",
+		body: credentials,
+	});
 
-		await refreshSession();
-		await navigateTo("/");
+	if (error.value?.statusCode) {
+		if ([400, 401].includes(error.value.statusCode)) {
+			alert(error.value.statusMessage);
+		}
+		else {
+			alert("Couldn't log in	. Please try again later.");
+		}
+
+		return;
 	}
-	catch {
-		alert("Bad credentials");
-	}
+
+	await refreshSession();
+	await navigateTo("/");
 }
 </script>
 
 <template>
+	<h1>Login</h1>
 	<form @submit.prevent="login">
 		<input
 			v-model="credentials.email"
@@ -36,4 +43,6 @@ async function login() {
 			Login
 		</button>
 	</form>
+
+	<NuxtLink to="/register">Don't have an account?</NuxtLink>
 </template>

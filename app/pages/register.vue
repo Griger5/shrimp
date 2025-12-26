@@ -30,6 +30,7 @@ async function register() {
 </script>
 
 <template>
+	<h1>Register</h1>
 	<form @submit.prevent="register">
 		<input
 			v-model="credentials.username"
