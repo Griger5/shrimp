@@ -16,6 +16,7 @@
     "@picocss/pico": "^2.1.1",
     "@types/bcrypt": "^6.0.0",
     "@types/pg": "^8.16.0",
+    "@webgpu/types": "^0.1.68",
     "bcrypt": "^6.0.0",
     "dotenv": "^17.2.3",
     "drizzle-kit": "^0.31.8",
