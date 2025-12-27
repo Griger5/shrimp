@@ -15,8 +15,8 @@ export default defineNuxtPlugin(async (nuxtApp) => {
 
 	const device = await adapter.requestDevice();
 	const queue = device.queue;
-
-	const canvasFormat = navigator.gpu.getPreferredCanvasFormat();
+	const encoder = device.createCommandEncoder();
+	const pass = encoder.beginComputePass();
 
 	return {
 		provide: {
@@ -24,7 +24,8 @@ export default defineNuxtPlugin(async (nuxtApp) => {
 				adapter,
 				device,
 				queue,
-				canvasFormat,
+				encoder,
+				pass,
 			},
 		},
 	};

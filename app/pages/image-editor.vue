@@ -2,31 +2,52 @@
 import { ref } from "vue";
 import { useWebGPU } from "../composables/use-webgpu";
 
+import invertShader from "../../src/shaders/invert-colors.wgsl?raw";
+
 const canvas = ref<HTMLCanvasElement | null>(null);
 const imageBitmap = ref<ImageBitmap | null>(null);
 
-const onFileChange = async (e: Event) => {
+let width: number;
+let height: number;
+
+let device: GPUDevice;
+let queue: GPUQueue;
+let encoder: GPUCommandEncoder;
+let pass: GPUComputePassEncoder;
+
+let inputTexture: GPUTexture;
+let outputTexture: GPUTexture;
+
+onMounted(async () => {
+	const gpu = useWebGPU();
+	if (!gpu) {
+		alert("WebGPU not available");
+		return;
+	}
+
+	device = gpu.device;
+	queue = gpu.queue;
+	encoder = gpu.encoder;
+	pass = gpu.pass;
+});
+
+const onNewImage = async (e: Event) => {
 	const file = (e.target as HTMLInputElement).files?.[0];
 	if (!file) return;
 
-	const img = await createImageBitmap(file);
-	imageBitmap.value = img;
+	imageBitmap.value = await createImageBitmap(file);
 
 	const ctx = canvas.value!.getContext("2d")!;
-	canvas.value!.width = img.width;
-	canvas.value!.height = img.height;
-	ctx.drawImage(img, 0, 0);
-};
-
-const invertImage = async () => {
-	const { device, queue } = useWebGPU();
+	canvas.value!.width = imageBitmap.value.width;
+	canvas.value!.height = imageBitmap.value.height;
+	ctx.drawImage(imageBitmap.value, 0, 0);
 
 	const img = imageBitmap.value!;
-	const width = img.width;
-	const height = img.height;
+	width = img.width;
+	height = img.height;
 
-	const inputTexture = device.createTexture({
-		size: [width, height],
+	inputTexture = device.createTexture({
+		size: [imageBitmap.value.width, imageBitmap.value.height],
 		format: "rgba8unorm",
 		usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.STORAGE_BINDING,
 	});
@@ -37,29 +58,14 @@ const invertImage = async () => {
 		[width, height],
 	);
 
-	const outputTexture = device.createTexture({
+	outputTexture = device.createTexture({
 		size: [width, height],
 		format: "rgba8unorm",
 		usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.COPY_SRC | GPUTextureUsage.TEXTURE_BINDING,
 	});
+};
 
-	const shaderCode = `
-		@group(0) @binding(0)
-		var inputTex: texture_2d<f32>;
-		@group(0) @binding(1)
-		var outputTex: texture_storage_2d<rgba8unorm, write>;
-
-		@compute @workgroup_size(16,16)
-		fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
-		let dims = textureDimensions(inputTex);
-		if (gid.x >= dims.x || gid.y >= dims.y) { return; }
-
-		let pixel = textureLoad(inputTex, vec2<i32>(i32(gid.x), i32(gid.y)), 0);
-		let inverted = vec4<f32>(1.0 - pixel.rgb, pixel.a);
-		textureStore(outputTex, vec2<i32>(i32(gid.x), i32(gid.y)), inverted);
-		}
-	`;
-
+const applyShader = async (shaderCode: string) => {
 	const shaderModule = device.createShaderModule({ code: shaderCode });
 	const pipeline = device.createComputePipeline({
 		layout: "auto",
@@ -74,8 +80,6 @@ const invertImage = async () => {
 		],
 	});
 
-	const encoder = device.createCommandEncoder();
-	const pass = encoder.beginComputePass();
 	pass.setPipeline(pipeline);
 	pass.setBindGroup(0, bindGroup);
 	pass.dispatchWorkgroups(Math.ceil(width / 16), Math.ceil(height / 16));
@@ -124,6 +128,10 @@ const invertImage = async () => {
 
 	readBuffer.unmap();
 };
+
+const invertImage = async () => {
+	applyShader(invertShader);
+};
 </script>
 
 <template>
@@ -134,10 +142,13 @@ const invertImage = async () => {
 			<input
 				type="file"
 				accept="image/*"
-				@change="onFileChange"
+				@change="onNewImage"
 			>
 
-			<button :disabled="!imageBitmap" @click="invertImage">
+			<button
+				:disabled="!imageBitmap"
+				@click="invertImage"
+			>
 				Invert Colors
 			</button>
 
