@@ -10,7 +10,6 @@ export const useWebGPU = () => {
 		adapter: GPUAdapter;
 		device: GPUDevice;
 		queue: GPUQueue;
-		encoder: GPUCommandEncoder;
-		pass: GPUComputePassEncoder;
+		format: GPUTextureFormat;
 	};
 };

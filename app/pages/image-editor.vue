@@ -3,6 +3,8 @@ import { ref } from "vue";
 import { useWebGPU } from "../composables/use-webgpu";
 
 import invertShader from "../../src/shaders/invert-colors.wgsl?raw";
+import renderVertex from "../../src/shaders/render-vertex.wgsl?raw";
+import renderFragment from "../../src/shaders/render-fragment.wgsl?raw";
 
 const canvas = ref<HTMLCanvasElement | null>(null);
 const imageBitmap = ref<ImageBitmap | null>(null);
@@ -12,11 +14,15 @@ let height: number;
 
 let device: GPUDevice;
 let queue: GPUQueue;
-let encoder: GPUCommandEncoder;
-let pass: GPUComputePassEncoder;
+let format: GPUTextureFormat;
 
 let inputTexture: GPUTexture;
 let outputTexture: GPUTexture;
+
+let sampler: GPUSampler;
+let renderPipeline: GPURenderPipeline;
+
+let context: GPUCanvasContext;
 
 onMounted(async () => {
 	const gpu = useWebGPU();
@@ -27,9 +33,59 @@ onMounted(async () => {
 
 	device = gpu.device;
 	queue = gpu.queue;
-	encoder = gpu.encoder;
-	pass = gpu.pass;
+	format = gpu.format;
+
+	context = canvas.value!.getContext("webgpu") as GPUCanvasContext;
+	context.configure({
+		device,
+		format,
+		alphaMode: "premultiplied",
+	});
+
+	sampler = device.createSampler({ magFilter: "nearest", minFilter: "nearest" });
+
+	renderPipeline = device.createRenderPipeline({
+		layout: "auto",
+		vertex: { module: device.createShaderModule({ code: renderVertex }), entryPoint: "main" },
+		fragment: {
+			module: device.createShaderModule({ code: renderFragment }),
+			entryPoint: "main",
+			targets: [{ format }],
+		},
+		primitive: { topology: "triangle-list" },
+	});
 });
+
+const render = () => {
+	const encoder = device.createCommandEncoder();
+	const view = context.getCurrentTexture().createView();
+
+	const renderBindGroup = device.createBindGroup({
+		layout: renderPipeline.getBindGroupLayout(0),
+		entries: [
+			{ binding: 0, resource: inputTexture.createView() },
+			{ binding: 1, resource: sampler },
+		],
+	});
+
+	const pass = encoder.beginRenderPass({
+		colorAttachments: [
+			{
+				view,
+				loadOp: "clear",
+				storeOp: "store",
+				clearValue: { r: 0, g: 0, b: 0, a: 1 },
+			},
+		],
+	});
+
+	pass.setPipeline(renderPipeline);
+	pass.setBindGroup(0, renderBindGroup);
+	pass.draw(6);
+	pass.end();
+
+	queue.submit([encoder.finish()]);
+};
 
 const onNewImage = async (e: Event) => {
 	const file = (e.target as HTMLInputElement).files?.[0];
@@ -37,17 +93,18 @@ const onNewImage = async (e: Event) => {
 
 	imageBitmap.value = await createImageBitmap(file);
 
-	const ctx = canvas.value!.getContext("2d")!;
-	canvas.value!.width = imageBitmap.value.width;
-	canvas.value!.height = imageBitmap.value.height;
-	ctx.drawImage(imageBitmap.value, 0, 0);
-
 	const img = imageBitmap.value!;
 	width = img.width;
 	height = img.height;
 
+	canvas.value!.width = width;
+	canvas.value!.height = height;
+
+	canvas.value!.style.width = "800px";
+	canvas.value!.style.height = "800px";
+
 	inputTexture = device.createTexture({
-		size: [imageBitmap.value.width, imageBitmap.value.height],
+		size: [width, height],
 		format: "rgba8unorm",
 		usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.STORAGE_BINDING,
 	});
@@ -63,9 +120,14 @@ const onNewImage = async (e: Event) => {
 		format: "rgba8unorm",
 		usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.COPY_SRC | GPUTextureUsage.TEXTURE_BINDING,
 	});
+
+	render(); 
 };
 
 const applyShader = async (shaderCode: string) => {
+	const encoder = device.createCommandEncoder();
+	const pass = encoder.beginComputePass();
+
 	const shaderModule = device.createShaderModule({ code: shaderCode });
 	const pipeline = device.createComputePipeline({
 		layout: "auto",
@@ -85,48 +147,11 @@ const applyShader = async (shaderCode: string) => {
 	pass.dispatchWorkgroups(Math.ceil(width / 16), Math.ceil(height / 16));
 	pass.end();
 
-	const bytesPerPixel = 4;
-	const unalignedBytesPerRow = width * bytesPerPixel;
-	const bytesPerRow = Math.ceil(unalignedBytesPerRow / 256) * 256;
-
-	const readBuffer = device.createBuffer({
-		size: bytesPerRow * height,
-		usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
-	});
-
-	encoder.copyTextureToBuffer(
-		{ texture: outputTexture },
-		{
-			buffer: readBuffer,
-			bytesPerRow,
-		},
-		[width, height],
-	);
-
 	queue.submit([encoder.finish()]);
 
-	await readBuffer.mapAsync(GPUMapMode.READ);
-	const mapped = new Uint8Array(readBuffer.getMappedRange());
+	[inputTexture, outputTexture] = [outputTexture, inputTexture];
 
-	const pixels = new Uint8ClampedArray(width * height * 4);
-
-	for (let y = 0; y < height; y++) {
-		const srcOffset = y * bytesPerRow;
-		const dstOffset = y * width * 4;
-
-		pixels.set(
-			mapped.subarray(
-				srcOffset,
-				srcOffset + width * 4,
-			),
-			dstOffset,
-		);
-	}
-
-	const imgData = new ImageData(pixels, width, height);
-	canvas.value!.getContext("2d")!.putImageData(imgData, 0, 0);
-
-	readBuffer.unmap();
+	render();
 };
 
 const invertImage = async () => {
@@ -156,3 +181,11 @@ const invertImage = async () => {
 		</div>
 	</div>
 </template>
+
+<style scoped>
+canvas {
+  	width: 800px;
+  	height: 800px;
+  	object-fit: contain;
+}
+</style>
