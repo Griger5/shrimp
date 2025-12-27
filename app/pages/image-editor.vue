@@ -121,7 +121,7 @@ const onNewImage = async (e: Event) => {
 		usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.COPY_SRC | GPUTextureUsage.TEXTURE_BINDING,
 	});
 
-	render(); 
+	render();
 };
 
 const applyShader = async (shaderCode: string) => {
@@ -157,27 +157,62 @@ const applyShader = async (shaderCode: string) => {
 const invertImage = async () => {
 	applyShader(invertShader);
 };
+
+const volume = ref(50);
+const count = ref(0);
+const enabled = ref(false);
 </script>
 
 <template>
 	<div class="container">
 		<h1>Image Editor</h1>
 
-		<div class="container">
-			<input
-				type="file"
-				accept="image/*"
-				@change="onNewImage"
-			>
-
-			<button
-				:disabled="!imageBitmap"
-				@click="invertImage"
-			>
-				Invert Colors
-			</button>
-
+		<input
+			type="file"
+			accept="image/*"
+			@change="onNewImage"
+		>
+	</div>
+	<div class="page-container">
+		<div class="canvas-wrapper">
 			<canvas ref="canvas" />
+		</div>
+		<div>
+			<aside class="sidebar-panel">
+				<h3>Controls</h3>
+
+				<button
+					class="secondary"
+					@click="invertImage"
+				>
+					Invert colors
+				</button>
+
+				<label for="volume">Volume: {{ volume }}</label>
+				<input
+					id="volume"
+					v-model="volume"
+					type="range"
+					min="0"
+					max="100"
+				>
+
+				<label for="count">Count:</label>
+				<input
+					id="count"
+					v-model="count"
+					type="number"
+					min="0"
+					max="100"
+				>
+
+				<label>
+					<input
+						v-model="enabled"
+						type="checkbox"
+					> Enable Feature
+				</label>
+			</aside>
 		</div>
 	</div>
 </template>
@@ -187,5 +222,33 @@ canvas {
   	width: 800px;
   	height: 800px;
   	object-fit: contain;
+	border: 3px solid #ccc;
+  	display: block;
+}
+
+.canvas-wrapper {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+	align-items: flex-start;
+}
+
+.page-container {
+	display: flex;
+	gap: 1rem;
+	padding: 1rem;
+	min-height: 100vh;
+}
+
+.sidebar-panel {
+	width: 250px;
+	padding: 1rem;
+	border: 3px solid #000000;
+	background: #1c2538;
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+	box-sizing: border-box;
 }
 </style>

@@ -23,7 +23,7 @@ export default defineNuxtPlugin(async (nuxtApp) => {
 				adapter,
 				device,
 				queue,
-				format
+				format,
 			},
 		},
 	};
