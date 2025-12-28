@@ -223,6 +223,7 @@ canvas {
   	height: 800px;
   	object-fit: contain;
 	border: 3px solid #ccc;
+	background-color: #000000;
   	display: block;
 }
 

@@ -8,6 +8,7 @@ const credentials = reactive({
 	email: "",
 	password: "",
 });
+
 async function login() {
 	const { data, error } = await useFetch("/api/login", {
 		method: "POST",
@@ -19,7 +20,7 @@ async function login() {
 			alert(error.value.statusMessage);
 		}
 		else {
-			alert("Couldn't log in	. Please try again later.");
+			alert("Couldn't log in. Please try again later.");
 		}
 
 		return;
@@ -37,11 +38,13 @@ async function login() {
 			v-model="credentials.email"
 			type="email"
 			placeholder="Email"
+			required
 		>
 		<input
 			v-model="credentials.password"
 			type="password"
 			placeholder="Password"
+			required
 		>
 		<button type="submit">
 			Login
