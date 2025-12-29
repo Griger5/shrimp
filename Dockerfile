@@ -7,6 +7,9 @@ WORKDIR /app
 COPY ./package.json /app/
 COPY ./package-lock.json /app/
 
+ENV ESBUILD_BINARY_PATH=/usr/bin/esbuild
+RUN apt-get update && apt-get install -y esbuild
+
 RUN npm install
 
 COPY . ./
