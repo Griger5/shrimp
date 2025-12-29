@@ -1,4 +1,4 @@
-export async function GPUTextureToBuffer(device: GPUDevice, texture: GPUTexture, width: number, height: number,) {
+export async function GPUTextureToBuffer(device: GPUDevice, texture: GPUTexture, width: number, height: number) {
 	const bytesPerPixel = 4;
 	const unpaddedBytesPerRow = width * bytesPerPixel;
 	const paddedBytesPerRow = Math.ceil(unpaddedBytesPerRow / 256) * 256;

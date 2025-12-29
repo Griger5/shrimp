@@ -10,7 +10,12 @@ export default defineNuxtPlugin(async (nuxtApp) => {
 
 	const adapter = await navigator.gpu.requestAdapter();
 	if (!adapter) {
-		throw new Error("No GPU adapter found");
+		console.warn("No GPU adapter found");
+		return {
+			provide: {
+				webgpu: null,
+			},
+		};
 	}
 
 	const device = await adapter.requestDevice();
