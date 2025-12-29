@@ -21,7 +21,7 @@ const { loggedIn } = useUserSession();
 			</ul>
 		</nav>
 	</div>
-	<br/>
+	<br>
 </template>
 
 <style scoped>

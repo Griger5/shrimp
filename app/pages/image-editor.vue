@@ -161,6 +161,17 @@ const invertImage = async () => {
 const volume = ref(50);
 const count = ref(0);
 const enabled = ref(false);
+
+async function downloadImage() {
+	const buffer = await GPUTextureToBuffer(device, inputTexture, width, height);
+	const blob = await GPUBufferToBlob(buffer, width, height);
+	const url = URL.createObjectURL(blob);
+	const a = document.createElement("a");
+	a.href = url;
+	a.download = "texture.png";
+	a.click();
+	URL.revokeObjectURL(url);
+}
 </script>
 
 <template>
@@ -176,6 +187,9 @@ const enabled = ref(false);
 	<div class="page-container">
 		<div class="canvas-wrapper">
 			<canvas ref="canvas" />
+			<button @click="downloadImage">
+				Download Image
+			</button>
 		</div>
 		<div>
 			<aside class="sidebar-panel">
