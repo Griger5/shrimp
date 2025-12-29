@@ -5,6 +5,7 @@ import { useWebGPU } from "../composables/use-webgpu";
 import invertShader from "../../src/shaders/invert-colors.wgsl?raw";
 import renderVertex from "../../src/shaders/render-vertex.wgsl?raw";
 import renderFragment from "../../src/shaders/render-fragment.wgsl?raw";
+import { downloadBlob } from "~/composables/download-blob";
 
 const canvas = ref<HTMLCanvasElement | null>(null);
 const imageBitmap = ref<ImageBitmap | null>(null);
@@ -162,16 +163,12 @@ const volume = ref(50);
 const count = ref(0);
 const enabled = ref(false);
 
-async function downloadImage() {
+const downloadImage = async () => {
 	const buffer = await GPUTextureToBuffer(device, inputTexture, width, height);
 	const blob = await GPUBufferToBlob(buffer, width, height);
-	const url = URL.createObjectURL(blob);
-	const a = document.createElement("a");
-	a.href = url;
-	a.download = "texture.png";
-	a.click();
-	URL.revokeObjectURL(url);
-}
+
+	await downloadBlob(blob);
+};
 </script>
 
 <template>
@@ -188,7 +185,7 @@ async function downloadImage() {
 		<div class="canvas-wrapper">
 			<canvas ref="canvas" />
 			<button @click="downloadImage">
-				Download Image
+				Download
 			</button>
 		</div>
 		<div>
