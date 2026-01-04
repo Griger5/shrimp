@@ -8,28 +8,38 @@ export default defineNuxtPlugin(async (nuxtApp) => {
 		};
 	}
 
-	const adapter = await navigator.gpu.requestAdapter();
-	if (!adapter) {
-		console.warn("No GPU adapter found");
+	try {
+		const adapter = await navigator.gpu.requestAdapter();
+		if (!adapter) {
+			console.warn("No GPU adapter found");
+			return {
+				provide: {
+					webgpu: null,
+				},
+			};
+		}
+
+		const device = await adapter.requestDevice();
+		const queue = device.queue;
+		const format = navigator.gpu.getPreferredCanvasFormat();
+
+		return {
+			provide: {
+				webgpu: {
+					adapter,
+					device,
+					queue,
+					format,
+				},
+			},
+		};
+	}
+	catch (err) {
+		console.warn("WebGPU initialization failed:", err);
 		return {
 			provide: {
 				webgpu: null,
 			},
 		};
 	}
-
-	const device = await adapter.requestDevice();
-	const queue = device.queue;
-	const format = navigator.gpu.getPreferredCanvasFormat();
-
-	return {
-		provide: {
-			webgpu: {
-				adapter,
-				device,
-				queue,
-				format,
-			},
-		},
-	};
 });

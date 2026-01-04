@@ -7,8 +7,15 @@ import renderVertex from "../../src/shaders/render-vertex.wgsl?raw";
 import renderFragment from "../../src/shaders/render-fragment.wgsl?raw";
 import { downloadBlob } from "~/composables/download-blob";
 
+const enum ComputeBackend {
+	WEBGPU,
+	WASM,
+}
+
 const canvas = ref<HTMLCanvasElement | null>(null);
 const imageBitmap = ref<ImageBitmap | null>(null);
+
+const computeBackend = ref<ComputeBackend | null>(null);
 
 let width: number;
 let height: number;
@@ -16,48 +23,56 @@ let height: number;
 let device: GPUDevice;
 let queue: GPUQueue;
 let format: GPUTextureFormat;
-
 let inputTexture: GPUTexture;
 let outputTexture: GPUTexture;
-
 let sampler: GPUSampler;
 let renderPipeline: GPURenderPipeline;
-
 let context: GPUCanvasContext;
+
+let wasmModule: any = null;
+let wasmInvertImage: any = null;
+let imageData: ImageData | null = null;
 
 onMounted(async () => {
 	const gpu = useWebGPU();
-	if (!gpu) {
-		alert("WebGPU not available");
-		return;
+
+	if (gpu) {
+		computeBackend.value = ComputeBackend.WEBGPU;
+
+		device = gpu.device;
+		queue = gpu.queue;
+		format = gpu.format;
+
+		context = canvas.value!.getContext("webgpu") as GPUCanvasContext;
+		context.configure({
+			device,
+			format,
+			alphaMode: "premultiplied",
+		});
+
+		sampler = device.createSampler({ magFilter: "nearest", minFilter: "nearest" });
+
+		renderPipeline = device.createRenderPipeline({
+			layout: "auto",
+			vertex: { module: device.createShaderModule({ code: renderVertex }), entryPoint: "main" },
+			fragment: {
+				module: device.createShaderModule({ code: renderFragment }),
+				entryPoint: "main",
+				targets: [{ format }],
+			},
+			primitive: { topology: "triangle-list" },
+		});
 	}
-
-	device = gpu.device;
-	queue = gpu.queue;
-	format = gpu.format;
-
-	context = canvas.value!.getContext("webgpu") as GPUCanvasContext;
-	context.configure({
-		device,
-		format,
-		alphaMode: "premultiplied",
-	});
-
-	sampler = device.createSampler({ magFilter: "nearest", minFilter: "nearest" });
-
-	renderPipeline = device.createRenderPipeline({
-		layout: "auto",
-		vertex: { module: device.createShaderModule({ code: renderVertex }), entryPoint: "main" },
-		fragment: {
-			module: device.createShaderModule({ code: renderFragment }),
-			entryPoint: "main",
-			targets: [{ format }],
-		},
-		primitive: { topology: "triangle-list" },
-	});
+	else {
+		computeBackend.value = ComputeBackend.WASM;
+		wasmModule = await import("../../public/wasm/image-manipulation.js").then(m => m.default());
+		wasmInvertImage = wasmModule.cwrap("invert_image", null, ["number", "number", "number"]);
+	}
 });
 
 const render = () => {
+	if (computeBackend.value !== ComputeBackend.WEBGPU) return;
+
 	const encoder = device.createCommandEncoder();
 	const view = context.getCurrentTexture().createView();
 
@@ -104,25 +119,32 @@ const onNewImage = async (e: Event) => {
 	canvas.value!.style.width = "800px";
 	canvas.value!.style.height = "800px";
 
-	inputTexture = device.createTexture({
-		size: [width, height],
-		format: "rgba8unorm",
-		usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.STORAGE_BINDING,
-	});
+	if (computeBackend.value === ComputeBackend.WEBGPU) {
+		inputTexture = device.createTexture({
+			size: [width, height],
+			format: "rgba8unorm",
+			usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.STORAGE_BINDING,
+		});
 
-	queue.copyExternalImageToTexture(
-		{ source: img },
-		{ texture: inputTexture },
-		[width, height],
-	);
+		queue.copyExternalImageToTexture(
+			{ source: img },
+			{ texture: inputTexture },
+			[width, height],
+		);
 
-	outputTexture = device.createTexture({
-		size: [width, height],
-		format: "rgba8unorm",
-		usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.COPY_SRC | GPUTextureUsage.TEXTURE_BINDING,
-	});
+		outputTexture = device.createTexture({
+			size: [width, height],
+			format: "rgba8unorm",
+			usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.COPY_SRC | GPUTextureUsage.TEXTURE_BINDING,
+		});
 
-	render();
+		render();
+	}
+	else if (computeBackend.value === ComputeBackend.WASM) {
+		const ctx = canvas.value!.getContext("2d")!;
+		ctx.drawImage(img, 0, 0);
+		imageData = ctx.getImageData(0, 0, width, height);
+	}
 };
 
 const applyShader = async (shaderCode: string) => {
@@ -155,8 +177,30 @@ const applyShader = async (shaderCode: string) => {
 	render();
 };
 
+const runFunctionWASM = async (wasmFunc: any) => {
+	if (!imageData || !wasmFunc || !wasmModule) return;
+
+	const { data, width, height } = imageData;
+	const size = data.length;
+
+	const ptr = wasmModule._malloc(size);
+	wasmModule.HEAPU8.set(data, ptr);
+
+	wasmFunc(ptr, width, height);
+
+	data.set(wasmModule.HEAPU8.subarray(ptr, ptr + size));
+	wasmModule._free(ptr);
+
+	canvas.value!.getContext("2d")!.putImageData(imageData, 0, 0);
+};
+
 const invertImage = async () => {
-	applyShader(invertShader);
+	if (computeBackend.value === ComputeBackend.WEBGPU) {
+		applyShader(invertShader);
+	}
+	else if (computeBackend.value === ComputeBackend.WASM) {
+		runFunctionWASM(wasmInvertImage);
+	}
 };
 
 const volume = ref(50);
@@ -164,8 +208,17 @@ const count = ref(0);
 const enabled = ref(false);
 
 const downloadImage = async () => {
-	const buffer = await GPUTextureToBuffer(device, inputTexture, width, height);
-	const blob = await GPUBufferToBlob(buffer, width, height);
+	let blob: Blob;
+
+	if (computeBackend.value === ComputeBackend.WEBGPU) {
+		const buffer = await GPUTextureToBuffer(device, inputTexture, width, height);
+		blob = await GPUBufferToBlob(buffer, width, height);
+	}
+	else if (computeBackend.value === ComputeBackend.WASM) {
+		blob = await new Promise<Blob>((resolve, reject) =>
+			canvas.value!.toBlob(b => b ? resolve(b) : reject(new Error("Failed to convert canvas to blob")), "image/png"),
+		);
+	}
 
 	await downloadBlob(blob);
 };
@@ -173,69 +226,71 @@ const downloadImage = async () => {
 
 <template>
 	<div class="container">
-		<h1>Image Editor</h1>
+		<div class="container">
+			<h1>Image Editor</h1>
 
-		<input
-			type="file"
-			accept="image/*"
-			@change="onNewImage"
-		>
-	</div>
-	<div class="page-container">
-		<div class="canvas-wrapper">
-			<canvas ref="canvas" />
-			<button @click="downloadImage">
-				Download
-			</button>
+			<input
+				type="file"
+				accept="image/*"
+				@change="onNewImage"
+			>
 		</div>
-		<div>
-			<aside class="sidebar-panel">
-				<h3>Controls</h3>
-
-				<button
-					class="secondary"
-					@click="invertImage"
-				>
-					Invert colors
+		<div class="page-container">
+			<div class="canvas-wrapper">
+				<canvas ref="canvas" />
+				<button @click="downloadImage">
+					Download
 				</button>
+			</div>
+			<div>
+				<aside class="sidebar-panel">
+					<h3>Controls</h3>
 
-				<label for="volume">Volume: {{ volume }}</label>
-				<input
-					id="volume"
-					v-model="volume"
-					type="range"
-					min="0"
-					max="100"
-				>
+					<button
+						class="secondary"
+						@click="invertImage"
+					>
+						Invert colors
+					</button>
 
-				<label for="count">Count:</label>
-				<input
-					id="count"
-					v-model="count"
-					type="number"
-					min="0"
-					max="100"
-				>
-
-				<label>
+					<label for="volume">Volume: {{ volume }}</label>
 					<input
-						v-model="enabled"
-						type="checkbox"
-					> Enable Feature
-				</label>
-			</aside>
+						id="volume"
+						v-model="volume"
+						type="range"
+						min="0"
+						max="100"
+					>
+
+					<label for="count">Count:</label>
+					<input
+						id="count"
+						v-model="count"
+						type="number"
+						min="0"
+						max="100"
+					>
+
+					<label>
+						<input
+							v-model="enabled"
+							type="checkbox"
+						> Enable Feature
+					</label>
+				</aside>
+			</div>
 		</div>
 	</div>
 </template>
 
 <style scoped>
 canvas {
-  	width: 800px;
-  	height: 800px;
-  	object-fit: contain;
+	width: 800px;
+	height: 800px;
+	object-fit: contain;
 	border: 3px solid #ccc;
 	background-color: #000000;
-  	display: block;
+	display: block;
 }
 
 .canvas-wrapper {

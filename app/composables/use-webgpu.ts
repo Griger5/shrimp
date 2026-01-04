@@ -3,7 +3,7 @@ export const useWebGPU = () => {
 	const webgpu = nuxtApp.$webgpu;
 
 	if (!webgpu) {
-		throw new Error("WebGPU plugin not available");
+		return null;
 	}
 
 	return webgpu as {

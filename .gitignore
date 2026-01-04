@@ -22,3 +22,4 @@ logs
 .env
 
 public/wasm/
+external/
