@@ -1,4 +1,4 @@
-ARG NODE_VERSION=20.19.0
+ARG NODE_VERSION=22
 
 FROM node:${NODE_VERSION}-slim AS build
 
@@ -8,11 +8,20 @@ COPY ./package.json /app/
 COPY ./package-lock.json /app/
 
 ENV ESBUILD_BINARY_PATH=/usr/bin/esbuild
-RUN apt-get update && apt-get install -y esbuild
+RUN apt-get update && apt-get install -y \ 
+    esbuild \
+    make \
+    git \
+    python3 \
+    xz-utils \
+    libatomic1 \
+    && rm -rf /var/lib/apt/lists/*
 
 RUN npm install
 
 COPY . ./
+
+RUN make
 
 RUN npm run build
 

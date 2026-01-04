@@ -19,4 +19,5 @@ build:
 
 clean:
 	rm -rf external/emsdk
+	rmdir external
 	rm -rf ${WASM_DIR}/*
