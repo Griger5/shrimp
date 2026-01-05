@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@nuxt/eslint": "^1.12.1",
+    "@nuxtjs/i18n": "^10.2.1",
     "@picocss/pico": "^2.1.1",
     "@types/bcrypt": "^6.0.0",
     "@types/pg": "^8.16.0",

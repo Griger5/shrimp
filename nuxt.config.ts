@@ -4,7 +4,7 @@ import wasm from "vite-plugin-wasm";
 import tsconfigPaths from "vite-tsconfig-paths";
 
 export default defineNuxtConfig({
-	modules: ["@nuxt/eslint", "nuxt-auth-utils"],
+	modules: ["@nuxt/eslint", "nuxt-auth-utils", "@nuxtjs/i18n"],
 	devtools: { enabled: true },
 	css: ["@picocss/pico"],
 	compatibilityDate: "2025-07-15",
@@ -23,5 +23,15 @@ export default defineNuxtConfig({
 				indent: "tab",
 			},
 		},
+	},
+	i18n: {
+		strategy: "no_prefix",
+		defaultLocale: "en",
+		detectBrowserLanguage: false,
+		langDir: "locales",
+		locales: [
+			{ code: "en", name: "English", file: "en.json" },
+			{ code: "pl", name: "Polski", file: "pl.json" },
+		],
 	},
 });
