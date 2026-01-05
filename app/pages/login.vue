@@ -3,6 +3,8 @@ definePageMeta({
 	middleware: ["logged-in"],
 });
 
+const { t } = useI18n();
+
 const { fetch: refreshSession } = useUserSession();
 const credentials = reactive({
 	email: "",
@@ -32,24 +34,24 @@ async function login() {
 </script>
 
 <template>
-	<h1>Login</h1>
+	<h1>{{ t("login.title") }}</h1>
 	<form @submit.prevent="login">
 		<input
 			v-model="credentials.email"
 			type="email"
-			placeholder="Email"
+			:placeholder="t('login.email')"
 			required
 		>
 		<input
 			v-model="credentials.password"
 			type="password"
-			placeholder="Password"
+			:placeholder="t('login.password')"
 			required
 		>
 		<button type="submit">
-			Login
+			{{ t("login.title") }}
 		</button>
 	</form>
 
-	<NuxtLink to="/register">Don't have an account?</NuxtLink>
+	<NuxtLink to="/register">{{ t("login.no_account") }}</NuxtLink>
 </template>

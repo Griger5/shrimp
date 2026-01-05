@@ -1,4 +1,44 @@
 {
-    "hello": "Helloass",
-    "welcome": "Welcome to our site"
+    "navbar": {
+        "about": "O nas",
+        "editor": "Edytor",
+        "login": "Zaloguj się",
+        "register": "Zarejestruj się",
+        "account": "Konto"
+    },
+    "index": {
+        "hello": "Witaj"
+    },
+    "about": {
+        "title": "O nas"
+    },
+    "editor": {
+        "title": "Edytor Obrazów",
+        "browse": "Szukaj...",
+        "download": "Pobierz",
+        "controls": "Narzędzia",
+        "functions": {
+            "invert": "Odwróć kolory"
+        }
+    },
+    "login": {
+        "title": "Zaloguj się",
+        "email": "Email",
+        "password": "Hasło",
+        "no_account": "Nie masz jeszcze konta?"
+    },
+    "register": {
+        "title": "Zarejestruj się",
+        "username": "Nazwa użytkownika",
+        "email": "Email",
+        "password": "Hasło",
+        "account": "Masz już konto?"
+    },
+    "account": {
+        "welcome": "Witaj"
+    },
+    "footer": {
+        "language": "Język",
+        "name": "Gracjan Adamus"
+    }
 }

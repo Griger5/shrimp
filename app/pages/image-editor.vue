@@ -7,6 +7,8 @@ import renderVertex from "../../src/shaders/render-vertex.wgsl?raw";
 import renderFragment from "../../src/shaders/render-fragment.wgsl?raw";
 import { downloadBlob } from "~/composables/download-blob";
 
+const { t } = useI18n();
+
 const enum ComputeBackend {
 	WEBGPU,
 	WASM,
@@ -227,7 +229,7 @@ const downloadImage = async () => {
 <template>
 	<div class="container">
 		<div class="container">
-			<h1>Image Editor</h1>
+			<h1>{{ t("editor.title") }}</h1>
 
 			<input
 				type="file"
@@ -239,18 +241,18 @@ const downloadImage = async () => {
 			<div class="canvas-wrapper">
 				<canvas ref="canvas" />
 				<button @click="downloadImage">
-					Download
+					{{ t("editor.download") }}
 				</button>
 			</div>
 			<div>
 				<aside class="sidebar-panel">
-					<h3>Controls</h3>
+					<h3>{{ t("editor.controls") }}</h3>
 
 					<button
 						class="secondary"
 						@click="invertImage"
 					>
-						Invert colors
+						{{ t("editor.functions.invert") }}
 					</button>
 
 					<label for="volume">Volume: {{ volume }}</label>

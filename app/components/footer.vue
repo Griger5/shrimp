@@ -12,12 +12,12 @@ const setLocale = async () => {
 
 		<div class="footer-content">
 			<small>
-				{{ new Date().getFullYear() }} MyApp. All rights reserved.
+				©{{ new Date().getFullYear() }} {{ t("footer.name") }}
 			</small>
 
 			<div class="locale-switcher">
 				<label for="locale">
-					Language
+					{{ t("footer.language") }}
 					<select
 						id="locale"
 						v-model="locale"

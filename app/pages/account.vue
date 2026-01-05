@@ -3,6 +3,8 @@ definePageMeta({
 	middleware: ["authenticated"],
 });
 
+const { t } = useI18n();
+
 const { user, clear: clearSession } = useUserSession();
 
 async function logout() {
@@ -13,7 +15,7 @@ async function logout() {
 
 <template>
 	<div>
-		<h1>Welcome {{ user?.name }}</h1>
+		<h1>{{ t("account.welcome") }} {{ user?.name }}</h1>
 		<button @click="logout">
 			Logout
 		</button>

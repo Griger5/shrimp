@@ -1,4 +1,44 @@
 {
-    "hello": "Helloasds",
-    "welcome": "Welcome to our site"
+    "navbar": {
+        "about": "About",
+        "editor": "Editor",
+        "login": "Login",
+        "register": "Register",
+        "account": "Account"
+    },
+    "index": {
+        "hello": "Hello"
+    },
+    "about": {
+        "title": "About"
+    },
+    "editor": {
+        "title": "Image Editor",
+        "browse": "Browse...",
+        "download": "Download",
+        "controls": "Controls",
+        "functions": {
+            "invert": "Invert colors"
+        }
+    },
+    "login": {
+        "title": "Login",
+        "email": "Email",
+        "password": "Password",
+        "no_account": "Don't have an account?"
+    },
+    "register": {
+        "title": "Register",
+        "username": "Username",
+        "email": "Email",
+        "password": "Password",
+        "account": "Already have an account?"
+    },
+    "account": {
+        "welcome": "Welcome"
+    },
+    "footer": {
+        "language": "Language",
+        "name": "Gracjan Adamus"
+    }
 }
