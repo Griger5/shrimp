@@ -12,6 +12,8 @@
     "lint:fix": "eslint . --fix"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.968.0",
+    "@aws-sdk/s3-request-presigner": "^3.968.0",
     "@nuxt/eslint": "^1.12.1",
     "@nuxtjs/i18n": "^10.2.1",
     "@picocss/pico": "^2.1.1",

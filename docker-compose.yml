@@ -26,6 +26,29 @@ services:
     ports:
       - "5050:80"
 
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    env_file: .env.example
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio-data:/data
+    command: server /data --console-address ":9001"
+
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      - minio
+    env_file:
+      - .env.example
+    volumes:
+      - ./minio-init.sh:/minio-init.sh
+    entrypoint: ["/bin/sh", "/minio-init.sh"]
+    restart: "no"
+
 volumes:
   db:
     driver: local
+  minio-data:
