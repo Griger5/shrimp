@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { ref } from "vue";
 import { useWebGPU } from "../composables/use-webgpu";
 
 import invertShader from "../../src/shaders/invert-colors.wgsl?raw";
@@ -10,6 +9,8 @@ import { downloadBlob } from "~/composables/download-blob";
 const { t } = useI18n();
 
 const { loggedIn } = useUserSession();
+
+const route = useRoute();
 
 const enum ComputeBackend {
 	WEBGPU,
@@ -36,6 +37,31 @@ let context: GPUCanvasContext;
 let wasmModule: any = null;
 let wasmInvertImage: any = null;
 let imageData: ImageData | null = null;
+
+const imageId = computed(() => {
+	const image = route.query.image;
+	return Array.isArray(image) ? image[0] : image;
+});
+
+watch(imageId, async (id) => {
+		if (!id) return;
+
+		const { data, error } = await useFetch("/api/images/url", {
+			query: { id },
+		});
+
+		if (error.value || !data.value?.url) {
+			console.error("Failed to fetch image URL");
+			return;
+		}
+
+		const response = await fetch(data.value.url);
+		const blob = await response.blob();
+
+		await loadImageFromBlob(blob);
+	},
+	{ immediate: true }
+);
 
 onMounted(async () => {
 	const gpu = useWebGPU();
@@ -107,19 +133,15 @@ const render = () => {
 	queue.submit([encoder.finish()]);
 };
 
-const onNewImage = async (e: Event) => {
-	const file = (e.target as HTMLInputElement).files?.[0];
-	if (!file) return;
+const loadImageFromBlob = async (blob: Blob) => {
+	const bitmap = await createImageBitmap(blob);
+	imageBitmap.value = bitmap;
 
-	imageBitmap.value = await createImageBitmap(file);
-
-	const img = imageBitmap.value!;
-	width = img.width;
-	height = img.height;
+	width = bitmap.width;
+	height = bitmap.height;
 
 	canvas.value!.width = width;
 	canvas.value!.height = height;
-
 	canvas.value!.style.width = "800px";
 	canvas.value!.style.height = "800px";
 
@@ -127,11 +149,14 @@ const onNewImage = async (e: Event) => {
 		inputTexture = device.createTexture({
 			size: [width, height],
 			format: "rgba8unorm",
-			usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.STORAGE_BINDING,
+			usage:
+				GPUTextureUsage.TEXTURE_BINDING |
+				GPUTextureUsage.COPY_DST |
+				GPUTextureUsage.STORAGE_BINDING,
 		});
 
 		queue.copyExternalImageToTexture(
-			{ source: img },
+			{ source: bitmap },
 			{ texture: inputTexture },
 			[width, height],
 		);
@@ -139,16 +164,25 @@ const onNewImage = async (e: Event) => {
 		outputTexture = device.createTexture({
 			size: [width, height],
 			format: "rgba8unorm",
-			usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.COPY_SRC | GPUTextureUsage.TEXTURE_BINDING,
+			usage:
+				GPUTextureUsage.STORAGE_BINDING |
+				GPUTextureUsage.COPY_SRC |
+				GPUTextureUsage.TEXTURE_BINDING,
 		});
 
 		render();
-	}
-	else if (computeBackend.value === ComputeBackend.WASM) {
+	} else {
 		const ctx = canvas.value!.getContext("2d")!;
-		ctx.drawImage(img, 0, 0);
+		ctx.drawImage(bitmap, 0, 0);
 		imageData = ctx.getImageData(0, 0, width, height);
 	}
+};
+
+const onNewImage = async (e: Event) => {
+	const file = (e.target as HTMLInputElement).files?.[0];
+	if (!file) return;
+
+	await loadImageFromBlob(file);
 };
 
 const applyShader = async (shaderCode: string) => {
