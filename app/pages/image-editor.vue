@@ -9,6 +9,8 @@ import { downloadBlob } from "~/composables/download-blob";
 
 const { t } = useI18n();
 
+const { loggedIn } = useUserSession();
+
 const enum ComputeBackend {
 	WEBGPU,
 	WASM,
@@ -209,21 +211,45 @@ const volume = ref(50);
 const count = ref(0);
 const enabled = ref(false);
 
-const downloadImage = async () => {
+const imageToBlob = async () => {
 	let blob: Blob;
 
 	if (computeBackend.value === ComputeBackend.WEBGPU) {
 		const buffer = await GPUTextureToBuffer(device, inputTexture, width, height);
-		blob = await GPUBufferToBlob(buffer, width, height);
+		return await GPUBufferToBlob(buffer, width, height);
 	}
 	else if (computeBackend.value === ComputeBackend.WASM) {
-		blob = await new Promise<Blob>((resolve, reject) =>
+		return await new Promise<Blob>((resolve, reject) =>
 			canvas.value!.toBlob(b => b ? resolve(b) : reject(new Error("Failed to convert canvas to blob")), "image/png"),
 		);
 	}
+}
+
+const downloadImage = async () => {
+	let blob = await imageToBlob();
 
 	await downloadBlob(blob);
 };
+
+const saveImageToAccount = async () => {
+	let blob = await imageToBlob();
+
+	const { data: uploadData } = await useFetch("/api/images/url", {
+		method: "POST",
+		body: { contentType: blob?.type, size: blob?.size },
+	});
+
+	await useFetch(uploadData.value?.uploadURL, {
+		method: "PUT",
+		body: blob,
+	});
+
+	const key = uploadData.value?.key;
+	await useFetch("/api/images/confirm-upload", {
+		method: "POST",
+		body: { key },
+	});
+}
 </script>
 
 <template>
@@ -242,6 +268,9 @@ const downloadImage = async () => {
 				<canvas ref="canvas" />
 				<button @click="downloadImage">
 					{{ t("editor.download") }}
+				</button>
+				<button v-if="loggedIn" @click="saveImageToAccount">
+					{{ t("editor.save") }}
 				</button>
 			</div>
 			<div>

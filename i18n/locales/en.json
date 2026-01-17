@@ -17,6 +17,7 @@
         "browse": "Browse...",
         "download": "Download",
         "controls": "Controls",
+        "save": "Save to account",
         "functions": {
             "invert": "Invert colors"
         }
