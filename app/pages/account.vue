@@ -4,7 +4,6 @@ definePageMeta({
 });
 
 const { t } = useI18n();
-
 const { user, clear: clearSession } = useUserSession();
 
 async function logout() {
@@ -19,20 +18,31 @@ const images = computed(() => data.value?.images ?? []);
 <template>
 	<div>
 		<h1>{{ t("account.welcome") }} {{ user?.id }}</h1>
-		<client-only>
+
 		<div class="results-container">
-			<ul>
-				<li v-for="item in images" :key="item.id">
-				<NuxtLink
-					:to="{ path: '/image-editor', query: { image: item.id } }"
-					class="result-link"
+			<ul class="image-list">
+				<li
+					v-for="item in images"
+					:key="item.id"
+					class="image-item"
 				>
-					{{ item.created_at }}
-				</NuxtLink>
+					<NuxtLink
+						:to="{ path: '/image-editor', query: { image: item.id } }"
+						class="image-link"
+					>
+						<img
+							:src="item.url"
+							:alt="`Image ${item.id}`"
+							class="thumbnail"
+						>
+					</NuxtLink>
+					<div class="created-at">
+						{{ new Date(item.created_at).toLocaleString() }}
+					</div>
 				</li>
 			</ul>
 		</div>
-		</client-only>
+
 		<button @click="logout">
 			Logout
 		</button>
@@ -41,20 +51,45 @@ const images = computed(() => data.value?.images ?? []);
 
 <style scoped>
 .results-container {
-	height: 320px;
+	max-height: 500px;
 	overflow-y: auto;
 	border: 1px solid var(--pico-muted-border-color);
 	border-radius: 6px;
+	padding: 0.5rem;
 }
 
-.result-link {
+.image-list {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+}
+
+.image-item {
+	display: flex;
+	align-items: center;
+	gap: 1rem;
+	padding: 0.5rem 0;
+	border-bottom: 1px solid var(--pico-muted-border-color);
+}
+
+.image-item:last-child {
+	border-bottom: none;
+}
+
+.thumbnail {
+	width: 100px;
+	height: 100px;
+	object-fit: cover;
+	border-radius: 4px;
+}
+
+.created-at {
+	font-size: 0.85rem;
+	color: var(--pico-muted-text-color);
+}
+
+.image-link {
+	flex-shrink: 0;
 	display: block;
-	padding: 0.75rem;
-	text-decoration: none;
-	color: inherit;
-}
-
-.result-link:hover {
-	background: var(--pico-muted-background-color);
 }
 </style>
