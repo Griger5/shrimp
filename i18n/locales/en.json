@@ -18,6 +18,8 @@
         "download": "Download",
         "controls": "Controls",
         "save": "Save to account",
+        "name_placeholder": "Enter image name",
+        "was_saved": "The image has been saved!",
         "functions": {
             "invert": "Invert colors"
         }
@@ -36,7 +38,10 @@
         "account": "Already have an account?"
     },
     "account": {
-        "welcome": "Welcome"
+        "welcome": "Welcome",
+        "no_images": "No images saved yet.",
+        "logout": "Logout",
+        "created_at": "Created at"
     },
     "footer": {
         "language": "Language",

@@ -21,7 +21,7 @@ export default defineEventHandler(async (event) => {
 	const [image] = await db.select().from(imagesTable).where(eq(imagesTable.id, id)).limit(1);
 
 	if (!image || image.user_id !== session.user?.id) {
-		throw createError({ 
+		throw createError({
 			statusCode: 404,
 			statusMessage: "Image not found.",
 		});

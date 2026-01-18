@@ -3,7 +3,7 @@ definePageMeta({
 	middleware: ["authenticated"],
 });
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const { user, clear: clearSession } = useUserSession();
 
 async function logout() {
@@ -17,10 +17,13 @@ const images = computed(() => data.value?.images ?? []);
 
 <template>
 	<div>
-		<h1>{{ t("account.welcome") }} {{ user?.id }}</h1>
+		<h1>{{ t("account.welcome") }} {{ user?.name }}</h1>
 
 		<div class="results-container">
-			<ul class="image-list">
+			<ul
+				v-if="images.length"
+				class="image-list"
+			>
 				<li
 					v-for="item in images"
 					:key="item.id"
@@ -36,15 +39,26 @@ const images = computed(() => data.value?.images ?? []);
 							class="thumbnail"
 						>
 					</NuxtLink>
-					<div class="created-at">
-						{{ new Date(item.created_at).toLocaleString() }}
+					<div>
+						<NuxtLink
+							:to="{ path: '/image-editor', query: { image: item.id } }"
+							class="image-link"
+						>
+							<h3>{{ item.name }}</h3>
+						</NuxtLink>
+						<div class="created-at">
+							{{ t("account.created_at") }}: {{ new Date(item.created_at).toLocaleString(locale) }}
+						</div>
 					</div>
 				</li>
 			</ul>
+			<p v-else>
+				{{ t("account.no_images") }}
+			</p>
 		</div>
-
+		<br>
 		<button @click="logout">
-			Logout
+			{{ t("account.logout") }}
 		</button>
 	</div>
 </template>
@@ -86,6 +100,7 @@ const images = computed(() => data.value?.images ?? []);
 .created-at {
 	font-size: 0.85rem;
 	color: var(--pico-muted-text-color);
+	display: inline;
 }
 
 .image-link {

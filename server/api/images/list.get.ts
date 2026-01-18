@@ -26,6 +26,7 @@ export default defineEventHandler(async (event) => {
 				object_key: img.object_key,
 				mime_type: img.mime_type,
 				size: img.size,
+				name: img.name,
 				created_at: img.created_at,
 				url,
 			};

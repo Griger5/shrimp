@@ -12,6 +12,7 @@ export const imagesTable = pgTable("images", {
 	object_key: text().notNull().unique(),
 	mime_type: text().notNull(),
 	size: integer().notNull(),
+	name: text().notNull(),
 	user_id: uuid().notNull(),
 	created_at: timestamp().notNull().defaultNow(),
 });

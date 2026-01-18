@@ -6,11 +6,12 @@ import { db } from "../../utils/db";
 import { imagesTable } from "../../db/schema";
 
 const bodySchema = z.object({
+	name: z.string(),
 	key: z.string().startsWith("temp/"),
 });
 
 export default defineEventHandler(async (event) => {
-	const { key } = await readValidatedBody(event, bodySchema.parse).catch((error) => {
+	const { name, key } = await readValidatedBody(event, bodySchema.parse).catch((error) => {
 		throw createError({
 			statusCode: 400,
 			statusMessage: "Ill-formed data.",
@@ -51,6 +52,7 @@ export default defineEventHandler(async (event) => {
 		object_key: finalKey,
 		mime_type: head.ContentType!,
 		size: Number(head.ContentLength),
+		name: name,
 		user_id: session.user?.id,
 	};
 

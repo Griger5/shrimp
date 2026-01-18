@@ -43,24 +43,29 @@ const imageId = computed(() => {
 	return Array.isArray(image) ? image[0] : image;
 });
 
+const imageName = ref("");
+let filename: string;
+
+const wasSaved = ref("");
+
 watch(imageId, async (id) => {
-		if (!id) return;
+	if (!id) return;
 
-		const { data, error } = await useFetch("/api/images/url", {
-			query: { id },
-		});
+	const { data, error } = await useFetch("/api/images/url", {
+		query: { id },
+	});
 
-		if (error.value || !data.value?.url) {
-			console.error("Failed to fetch image URL");
-			return;
-		}
+	if (error.value || !data.value?.url) {
+		console.error("Failed to fetch image URL");
+		return;
+	}
 
-		const response = await fetch(data.value.url);
-		const blob = await response.blob();
+	const response = await fetch(data.value.url);
+	const blob = await response.blob();
 
-		await loadImageFromBlob(blob);
-	},
-	{ immediate: true }
+	await loadImageFromBlob(blob);
+},
+{ immediate: true },
 );
 
 onMounted(async () => {
@@ -150,9 +155,9 @@ const loadImageFromBlob = async (blob: Blob) => {
 			size: [width, height],
 			format: "rgba8unorm",
 			usage:
-				GPUTextureUsage.TEXTURE_BINDING |
-				GPUTextureUsage.COPY_DST |
-				GPUTextureUsage.STORAGE_BINDING,
+				GPUTextureUsage.TEXTURE_BINDING
+				| GPUTextureUsage.COPY_DST
+				| GPUTextureUsage.STORAGE_BINDING,
 		});
 
 		queue.copyExternalImageToTexture(
@@ -165,13 +170,14 @@ const loadImageFromBlob = async (blob: Blob) => {
 			size: [width, height],
 			format: "rgba8unorm",
 			usage:
-				GPUTextureUsage.STORAGE_BINDING |
-				GPUTextureUsage.COPY_SRC |
-				GPUTextureUsage.TEXTURE_BINDING,
+				GPUTextureUsage.STORAGE_BINDING
+				| GPUTextureUsage.COPY_SRC
+				| GPUTextureUsage.TEXTURE_BINDING,
 		});
 
 		render();
-	} else {
+	}
+	else {
 		const ctx = canvas.value!.getContext("2d")!;
 		ctx.drawImage(bitmap, 0, 0);
 		imageData = ctx.getImageData(0, 0, width, height);
@@ -181,6 +187,8 @@ const loadImageFromBlob = async (blob: Blob) => {
 const onNewImage = async (e: Event) => {
 	const file = (e.target as HTMLInputElement).files?.[0];
 	if (!file) return;
+
+	filename = file.name;
 
 	await loadImageFromBlob(file);
 };
@@ -257,16 +265,16 @@ const imageToBlob = async () => {
 			canvas.value!.toBlob(b => b ? resolve(b) : reject(new Error("Failed to convert canvas to blob")), "image/png"),
 		);
 	}
-}
+};
 
 const downloadImage = async () => {
-	let blob = await imageToBlob();
+	const blob = await imageToBlob();
 
 	await downloadBlob(blob);
 };
 
 const saveImageToAccount = async () => {
-	let blob = await imageToBlob();
+	const blob = await imageToBlob();
 
 	const { data: uploadData } = await useFetch("/api/images/url", {
 		method: "POST",
@@ -278,12 +286,16 @@ const saveImageToAccount = async () => {
 		body: blob,
 	});
 
+	const name = imageName?.value.trim() || filename;
+
 	const key = uploadData.value?.key;
 	await useFetch("/api/images/confirm-upload", {
 		method: "POST",
-		body: { key },
+		body: { name, key },
 	});
-}
+
+	wasSaved.value = t("editor.was_saved");
+};
 </script>
 
 <template>
@@ -303,9 +315,22 @@ const saveImageToAccount = async () => {
 				<button @click="downloadImage">
 					{{ t("editor.download") }}
 				</button>
-				<button v-if="loggedIn" @click="saveImageToAccount">
-					{{ t("editor.save") }}
-				</button>
+				<div
+					v-if="loggedIn"
+					class="save-container"
+				>
+					<input
+						v-model="imageName"
+						type="text"
+						:placeholder="t('editor.name_placeholder')"
+					>
+					<button
+						@click="saveImageToAccount"
+					>
+						{{ t("editor.save") }}
+					</button>
+				</div>
+				<p>{{ wasSaved }}</p>
 			</div>
 			<div>
 				<aside class="sidebar-panel">
@@ -382,5 +407,23 @@ canvas {
 	flex-direction: column;
 	gap: 1rem;
 	box-sizing: border-box;
+}
+
+.save-container {
+	display: flex;
+	gap: 0.5rem;
+}
+
+.save-container input,
+.save-container button {
+	display: inline-flex;
+	align-items: center;
+	height: 2.5rem;
+	font-size: 1rem;
+	box-sizing: border-box;
+}
+
+.save-container button {
+	flex-shrink: 0;
 }
 </style>

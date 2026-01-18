@@ -18,6 +18,8 @@
         "download": "Pobierz",
         "controls": "Narzędzia",
         "save": "Zapisz na koncie",
+        "name_placeholder": "Nazwa obrazka",
+        "was_saved": "Zapisano obraz!",
         "functions": {
             "invert": "Odwróć kolory"
         }
@@ -36,7 +38,10 @@
         "account": "Masz już konto?"
     },
     "account": {
-        "welcome": "Witaj"
+        "welcome": "Witaj",
+        "no_images": "Nie zapisano żadnych obrazów.",
+        "logout": "Wyloguj",
+        "created_at": "Stworzono"
     },
     "footer": {
         "language": "Język",
