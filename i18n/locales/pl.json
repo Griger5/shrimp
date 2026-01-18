@@ -41,7 +41,9 @@
         "welcome": "Witaj",
         "no_images": "Nie zapisano żadnych obrazów.",
         "logout": "Wyloguj",
-        "created_at": "Stworzono"
+        "created_at": "Stworzono",
+        "delete": "Usuń",
+        "confirm_delete": "Na pewno usunąć?"
     },
     "footer": {
         "language": "Język",

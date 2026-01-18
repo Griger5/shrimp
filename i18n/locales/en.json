@@ -41,7 +41,9 @@
         "welcome": "Welcome",
         "no_images": "No images saved yet.",
         "logout": "Logout",
-        "created_at": "Created at"
+        "created_at": "Created at",
+        "delete": "Delete",
+        "confirm_delete": "Are you sure?"
     },
     "footer": {
         "language": "Language",

@@ -12,7 +12,32 @@ async function logout() {
 }
 
 const { data } = await useFetch("/api/images/list");
-const images = computed(() => data.value?.images ?? []);
+// const images = computed(() => data.value?.images ?? []);
+const images = ref(data.value?.images ?? []);
+
+const deletingId = ref<string | null>(null);
+
+async function deleteImage(imageId: string) {
+	if (!confirm(t("account.confirm_delete"))) return;
+
+	try {
+		deletingId.value = imageId;
+
+		await $fetch("/api/images/url/", {
+			method: "DELETE",
+			body: { id: deletingId.value }
+		});
+
+		images.value = images.value.filter((img) => img.id !== imageId);
+	}
+	catch (error) {
+		console.error(error);
+		alert(t("account.delete_failed"));
+	}
+	finally {
+		deletingId.value = null;
+	}
+}
 </script>
 
 <template>
@@ -39,16 +64,25 @@ const images = computed(() => data.value?.images ?? []);
 							class="thumbnail"
 						>
 					</NuxtLink>
-					<div>
-						<NuxtLink
-							:to="{ path: '/image-editor', query: { image: item.id } }"
-							class="image-link"
-						>
-							<h3>{{ item.name }}</h3>
-						</NuxtLink>
-						<div class="created-at">
-							{{ t("account.created_at") }}: {{ new Date(item.created_at).toLocaleString(locale) }}
+					<div class="row">
+						<div>
+							<NuxtLink
+								:to="{ path: '/image-editor', query: { image: item.id } }"
+								class="image-link"
+							>
+								<h3>{{ item.name }}</h3>
+							</NuxtLink>
+							<div class="created-at">
+								{{ t("account.created_at") }}: {{ new Date(item.created_at).toLocaleString(locale) }}
+							</div>
 						</div>
+						<button
+							class="right"
+							:disabled="deletingId === item.id"
+							@click="deleteImage(item.id)"
+						>
+							{{ deletingId === item.id ? t("account.deleting") : t("account.delete") }}
+						</button>
 					</div>
 				</li>
 			</ul>
@@ -101,10 +135,21 @@ const images = computed(() => data.value?.images ?? []);
 	font-size: 0.85rem;
 	color: var(--pico-muted-text-color);
 	display: inline;
+	margin-right: auto;
 }
 
 .image-link {
 	flex-shrink: 0;
 	display: block;
+}
+
+.row {
+	display: flex;
+	align-items: center;
+	flex: 1;
+}
+
+.right {
+	margin-left: auto;
 }
 </style>
