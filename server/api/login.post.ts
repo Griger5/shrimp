@@ -28,6 +28,8 @@ export default defineEventHandler(async (event) => {
 					id: user[0].id,
 				},
 			});
+
+			return { ok: true };
 		}
 		else {
 			throw createError({

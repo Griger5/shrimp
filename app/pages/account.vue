@@ -25,10 +25,10 @@ async function deleteImage(imageId: string) {
 
 		await $fetch("/api/images/url/", {
 			method: "DELETE",
-			body: { id: deletingId.value }
+			body: { id: deletingId.value },
 		});
 
-		images.value = images.value.filter((img) => img.id !== imageId);
+		images.value = images.value.filter(img => img.id !== imageId);
 	}
 	catch (error) {
 		console.error(error);

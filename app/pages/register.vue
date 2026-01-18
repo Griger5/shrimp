@@ -54,7 +54,7 @@ async function register() {
 			v-model="credentials.password"
 			type="password"
 			:placeholder="t('register.password')"
-			required 
+			required
 		>
 		<button type="submit">
 			{{ t("register.title") }}

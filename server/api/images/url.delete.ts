@@ -17,18 +17,18 @@ export default defineEventHandler(async (event) => {
 		});
 	});
 
-	const [ image ] = await db.select({ object_key: imagesTable.object_key }).from(imagesTable).where(eq(imagesTable.id, id)).limit(1);
-    
-    const key = image.object_key;
+	const [image] = await db.select({ object_key: imagesTable.object_key }).from(imagesTable).where(eq(imagesTable.id, id)).limit(1);
 
-    await internalS3Client.send(
-        new DeleteObjectCommand({
-            Bucket: process.env.S3_BUCKET!,
-            Key: key,
-        })
-    );
+	const key = image.object_key;
 
-    await db.delete(imagesTable).where(eq(imagesTable.id, id));
-    
+	await internalS3Client.send(
+		new DeleteObjectCommand({
+			Bucket: process.env.S3_BUCKET!,
+			Key: key,
+		}),
+	);
+
+	await db.delete(imagesTable).where(eq(imagesTable.id, id));
+
 	return { ok: true };
 });
